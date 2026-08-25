@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\NasabahController;
 use App\Http\Controllers\Api\LokasiArsipController;
 use App\Http\Controllers\Api\JenisDokumenController;
@@ -26,7 +27,19 @@ Route::post('/login', [AuthController::class, 'login']);
 |--------------------------------------------------------------------------
 */
 
-Route::middleware('auth:sanctum')->group(function () {
+/*
+|--------------------------------------------------------------------------
+| Public Stats Endpoint (pakai web session auth)
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware('auth:sanctum,web')->get('/dashboard/stats', [
+    DashboardController::class,
+    'stats'
+]);
+
+
+Route::middleware('auth:sanctum,web')->group(function () {
 
     /*
     |--------------------------------------------------------------------------
@@ -242,6 +255,11 @@ Route::middleware('auth:sanctum')->group(function () {
             'store'
         ]);
 
+        Route::put('/dokumen/{dokumen}', [
+            DokumenController::class,
+            'update'
+        ]);
+
         // Detail dokumen
         Route::get('/dokumen/{dokumen}', [
             DokumenController::class,
@@ -258,6 +276,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/dokumen/{dokumen}/download', [
             DokumenController::class,
             'download'
+        ]);
+
+
+        Route::delete('/dokumen/{dokumen}', [
+            DokumenController::class,
+            'destroy'
         ]);
 
     });
@@ -316,6 +340,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::patch('/users/{user}/aktifkan', [
             UserController::class,
             'activate'
+        ]);
+
+        // Hapus Petugas
+        Route::delete('/users/{user}', [
+            UserController::class,
+            'destroy'
         ]);
 
     });

@@ -49,12 +49,13 @@ class DokumenController extends Controller
             'file' => [
                 'required',
                 'file',
+                'mimes:pdf,jpg,jpeg,png',
                 'max:10240',
             ],
 
             'status_fisik' => [
                 'nullable',
-                'in:tersedia,tidak tersedia',
+                'in:tersedia,tidak_tersedia',
             ],
         ]);
 
@@ -231,4 +232,69 @@ class DokumenController extends Controller
             $dokumen->nama_file
         );
     }
+
+
+    /**
+     * Mengganti file digital dari dokumen yang sudah ada.
+     */
+    public function update(Request $request, Dokumen $dokumen)
+    {
+        $validated = $request->validate([
+            'file' => [
+                'required',
+                'file',
+                'mimes:pdf,jpg,jpeg,png',
+                'max:10240',
+            ],
+        ]);
+
+        $file = $validated['file'];
+        $oldPath = $dokumen->path_file;
+        $newPath = $file->store('dokumen', 'public');
+
+        try {
+            $dokumen->update([
+                'nama_file' => $file->getClientOriginalName(),
+                'path_file' => $newPath,
+                'status_digital' => 'tersedia',
+                'uploaded_by' => Auth::id(),
+                'uploaded_at' => now(),
+            ]);
+
+            if ($oldPath && $oldPath !== $newPath) {
+                Storage::disk('public')->delete($oldPath);
+            }
+
+        } catch (\Throwable $error) {
+            Storage::disk('public')->delete($newPath);
+            throw $error;
+        }
+
+        $dokumen->load(['jenisDokumen', 'uploader']);
+
+        return response()->json([
+            'message' => 'Dokumen berhasil diganti.',
+            'data' => $dokumen,
+        ]);
+    }
+
+
+    /**
+     * Menghapus data dokumen beserta file digitalnya.
+     */
+    public function destroy(Dokumen $dokumen)
+    {
+        $pathFile = $dokumen->path_file;
+
+        $dokumen->delete();
+
+        if ($pathFile) {
+            Storage::disk('public')->delete($pathFile);
+        }
+
+        return response()->json([
+            'message' => 'Dokumen berhasil dihapus.',
+        ]);
+    }
+
 }

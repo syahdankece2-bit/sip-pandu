@@ -16,6 +16,9 @@ class Nasabah extends Model
     protected $fillable = [
         'nomor_nasabah',
         'nama',
+        'nik',
+        'no_kk',
+        'npwp',
         'status',
     ];
 

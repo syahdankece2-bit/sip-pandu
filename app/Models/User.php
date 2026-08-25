@@ -25,6 +25,7 @@ class User extends Authenticatable
         'id_pegawai',
         'username',
         'email',
+        'avatar',
         'password',
         'role',
         'status',

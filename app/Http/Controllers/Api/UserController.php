@@ -23,12 +23,20 @@ class UserController extends Controller
                 'id_pegawai',
                 'username',
                 'email',
+                'avatar',
                 'role',
                 'status',
                 'created_at',
             ])
             ->orderBy('name')
-            ->get();
+            ->get()
+            ->map(function ($user) {
+                $user->avatar_url = $user->avatar
+                    ? asset('storage/' . $user->avatar)
+                    : null;
+
+                return $user;
+            });
 
         return response()->json([
             'message' => 'Daftar user berhasil diambil.',
@@ -46,16 +54,20 @@ class UserController extends Controller
     {
         return response()->json([
             'message' => 'Detail user berhasil diambil.',
-            'data' => $user->only([
-                'id',
-                'name',
-                'id_pegawai',
-                'username',
-                'email',
-                'role',
-                'status',
-                'created_at',
-            ]),
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'id_pegawai' => $user->id_pegawai,
+                'username' => $user->username,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'avatar_url' => $user->avatar
+                    ? asset('storage/' . $user->avatar)
+                    : null,
+                'role' => $user->role,
+                'status' => $user->status,
+                'created_at' => $user->created_at,
+            ],
         ]);
     }
 
@@ -102,7 +114,6 @@ class UserController extends Controller
             ],
         ]);
 
-
         $user = User::create([
             'name' => $validated['name'],
             'id_pegawai' => $validated['id_pegawai'],
@@ -113,19 +124,20 @@ class UserController extends Controller
             'status' => 'aktif',
         ]);
 
-
         return response()->json([
             'message' => 'Petugas berhasil ditambahkan.',
-            'data' => $user->only([
-                'id',
-                'name',
-                'id_pegawai',
-                'username',
-                'email',
-                'role',
-                'status',
-                'created_at',
-            ]),
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'id_pegawai' => $user->id_pegawai,
+                'username' => $user->username,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'avatar_url' => null,
+                'role' => $user->role,
+                'status' => $user->status,
+                'created_at' => $user->created_at,
+            ],
         ], 201);
     }
 
@@ -137,18 +149,11 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan yang diedit adalah Petugas
-        |--------------------------------------------------------------------------
-        */
-
         if ($user->role !== 'petugas') {
             return response()->json([
                 'message' => 'Data Admin tidak dapat diedit melalui fitur ini.',
             ], 403);
         }
-
 
         $validated = $request->validate([
             'name' => [
@@ -188,17 +193,10 @@ class UserController extends Controller
             ],
         ]);
 
-
         $user->name = $validated['name'];
         $user->id_pegawai = $validated['id_pegawai'];
         $user->username = $validated['username'];
         $user->email = $validated['email'] ?? null;
-
-        /*
-        |--------------------------------------------------------------------------
-        | Password hanya diubah jika dikirim
-        |--------------------------------------------------------------------------
-        */
 
         if (!empty($validated['password'])) {
             $user->password = $validated['password'];
@@ -206,46 +204,39 @@ class UserController extends Controller
 
         $user->save();
 
-
         return response()->json([
             'message' => 'Data petugas berhasil diperbarui.',
-            'data' => $user->only([
-                'id',
-                'name',
-                'id_pegawai',
-                'username',
-                'email',
-                'role',
-                'status',
-                'created_at',
-            ]),
+            'data' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'id_pegawai' => $user->id_pegawai,
+                'username' => $user->username,
+                'email' => $user->email,
+                'avatar' => $user->avatar,
+                'avatar_url' => $user->avatar
+                    ? asset('storage/' . $user->avatar)
+                    : null,
+                'role' => $user->role,
+                'status' => $user->status,
+                'created_at' => $user->created_at,
+            ],
         ]);
     }
 
 
     /**
-     * Mengaktifkan atau menonaktifkan Petugas.
-     *
-     * Khusus Admin.
+     * Menonaktifkan Petugas.
      */
     public function deactivate(User $user)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan yang dinonaktifkan adalah Petugas
-        |--------------------------------------------------------------------------
-        */
-
         if ($user->role !== 'petugas') {
             return response()->json([
                 'message' => 'Data Admin tidak dapat dinonaktifkan melalui fitur ini.',
             ], 403);
         }
 
-
         $user->status = 'nonaktif';
         $user->save();
-
 
         return response()->json([
             'message' => 'Petugas berhasil dinonaktifkan.',
@@ -255,6 +246,7 @@ class UserController extends Controller
                 'id_pegawai',
                 'username',
                 'email',
+                'avatar',
                 'role',
                 'status',
             ]),
@@ -264,27 +256,17 @@ class UserController extends Controller
 
     /**
      * Mengaktifkan kembali Petugas.
-     *
-     * Khusus Admin.
      */
     public function activate(User $user)
     {
-        /*
-        |--------------------------------------------------------------------------
-        | Pastikan yang diaktifkan adalah Petugas
-        |--------------------------------------------------------------------------
-        */
-
         if ($user->role !== 'petugas') {
             return response()->json([
                 'message' => 'Data Admin tidak dapat diaktifkan melalui fitur ini.',
             ], 403);
         }
 
-
         $user->status = 'aktif';
         $user->save();
-
 
         return response()->json([
             'message' => 'Petugas berhasil diaktifkan.',
@@ -294,9 +276,29 @@ class UserController extends Controller
                 'id_pegawai',
                 'username',
                 'email',
+                'avatar',
                 'role',
                 'status',
             ]),
+        ]);
+    }
+
+
+    /**
+     * Menghapus Petugas.
+     */
+    public function destroy(User $user)
+    {
+        if ($user->role !== 'petugas') {
+            return response()->json([
+                'message' => 'Data Admin tidak dapat dihapus melalui fitur ini.',
+            ], 403);
+        }
+
+        $user->delete();
+
+        return response()->json([
+            'message' => 'User petugas berhasil dihapus.',
         ]);
     }
 }
